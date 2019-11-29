@@ -19,14 +19,15 @@ import java.util.Random;
 
 import static android.content.ContentValues.TAG;
 
-public class SnakeEngine extends SurfaceView implements Runnable{
+public class SnakeEngine extends SurfaceView implements Runnable {
 
     public enum Directions {
         UP,
         RIGHT,
         DOWN,
-        LEFT;
+        LEFT
     }
+
     private Directions direction = Directions.RIGHT;
 
     private Thread thread = null;
@@ -36,7 +37,7 @@ public class SnakeEngine extends SurfaceView implements Runnable{
     private Paint paint;
 
     private SoundPool soundPool;
-    private int eat_bob = -1;
+    private int food_eaten = -1;
     private int snake_crash = -1;
 
     private int blockSize;
@@ -44,6 +45,9 @@ public class SnakeEngine extends SurfaceView implements Runnable{
     private int score;
     private ArrayList<Point> snakeBody = new ArrayList<>();
     private int numBlocksHigh;
+
+    private int foodX;
+    private int foodY;
 
     private long nextFrameTime;
     private final long FPS = 10;
@@ -64,7 +68,7 @@ public class SnakeEngine extends SurfaceView implements Runnable{
             AssetFileDescriptor descriptor;
 
             descriptor = assetManager.openFd("get_mouse_sound.ogg");
-            eat_bob = soundPool.load(descriptor, 0);
+            food_eaten = soundPool.load(descriptor, 0);
 
             descriptor = assetManager.openFd("death_sound.ogg");
             snake_crash = soundPool.load(descriptor, 0);
@@ -81,25 +85,28 @@ public class SnakeEngine extends SurfaceView implements Runnable{
         this.setOnTouchListener(new SnakeSwipeListener(getContext()) {
             @Override
             public void onSwipeTop() {
-                if (direction != Directions.DOWN){
+                if (direction != Directions.DOWN) {
                     direction = Directions.UP;
                 }
             }
+
             @Override
             public void onSwipeRight() {
-                if (direction != Directions.LEFT){
+                if (direction != Directions.LEFT) {
                     direction = Directions.RIGHT;
                 }
             }
+
             @Override
             public void onSwipeLeft() {
-                if (direction != Directions.RIGHT){
+                if (direction != Directions.RIGHT) {
                     direction = Directions.LEFT;
                 }
             }
+
             @Override
             public void onSwipeBottom() {
-                if (direction != Directions.UP){
+                if (direction != Directions.UP) {
                     direction = Directions.DOWN;
                 }
             }
@@ -109,20 +116,35 @@ public class SnakeEngine extends SurfaceView implements Runnable{
 
     public void newGame() {
         snakeBody.clear();
-        snakeBody.add(new Point (BLOCK_SIZE / 2,numBlocksHigh / 2));
+        snakeBody.add(new Point(BLOCK_SIZE / 2, numBlocksHigh / 2));
+
+        spawnFood();
 
         score = 0;
 
         nextFrameTime = System.currentTimeMillis();
     }
 
-    private void moveSnake(){
+    public void spawnFood() {
+        Random random = new Random();
+        foodX = random.nextInt(BLOCK_SIZE - 1) + 1;
+        foodY = random.nextInt(numBlocksHigh - 1) + 1;
+    }
+
+    private void foodEaten() {
+        snakeBody.add(new Point());
+        spawnFood();
+        score = score + 1;
+        soundPool.play(food_eaten, 1, 1, 0, 0, 1);
+    }
+
+    private void moveSnake() {
         for (Point p : snakeBody)
-        Log.d(TAG, "moveSnake: " + p.x);
-        
-        for (int i = snakeBody.size() -1; i > 0; i--){
-            snakeBody.get(i).x = snakeBody.get(i-1).x;
-            snakeBody.get(i).y = snakeBody.get(i-1).y;
+            Log.d(TAG, "moveSnake: " + p.x);
+
+        for (int i = snakeBody.size() - 1; i > 0; i--) {
+            snakeBody.get(i).x = snakeBody.get(i - 1).x;
+            snakeBody.get(i).y = snakeBody.get(i - 1).y;
         }
 
         switch (direction) {
@@ -144,12 +166,38 @@ public class SnakeEngine extends SurfaceView implements Runnable{
         }
     }
 
+    private boolean detectDeath() {
+        boolean dead = false;
+
+        if (snakeBody.get(0).x == -1) dead = true;
+        if (snakeBody.get(0).x >= BLOCK_SIZE) dead = true;
+        if (snakeBody.get(0).y == -1) dead = true;
+        if (snakeBody.get(0).y == numBlocksHigh) dead = true;
+
+        for (int i = snakeBody.size() - 1; i > 0; i--) {
+            if ((i > 4) && (snakeBody.get(0).x == snakeBody.get(i).x) && (snakeBody.get(0).y == snakeBody.get(i).y)) {
+                dead = true;
+            }
+        }
+
+        return dead;
+    }
+
     public void update() {
+        if (snakeBody.get(0).x == foodX && snakeBody.get(0).y == foodY) {
+            foodEaten();
+        }
+
         moveSnake();
+
+        if (detectDeath()) {
+            soundPool.play(snake_crash, 1, 1, 0, 0, 1);
+            newGame();
+        }
     }
 
     public boolean updateRequired() {
-        if(nextFrameTime <= System.currentTimeMillis()){
+        if (nextFrameTime <= System.currentTimeMillis()) {
             nextFrameTime = System.currentTimeMillis() + MILLIS_PER_SECOND / FPS;
             return true;
         }
@@ -173,7 +221,11 @@ public class SnakeEngine extends SurfaceView implements Runnable{
             }
 
             paint.setColor(Color.argb(255, 255, 0, 0));
-
+            canvas.drawRect(foodX * blockSize,
+                    (foodY * blockSize),
+                    (foodX * blockSize) + blockSize,
+                    (foodY * blockSize) + blockSize,
+                    paint);
 
             surfaceHolder.unlockCanvasAndPost(canvas);
         }
@@ -181,7 +233,7 @@ public class SnakeEngine extends SurfaceView implements Runnable{
 
     public void run() {
         while (isPlaying) {
-            if(updateRequired()) {
+            if (updateRequired()) {
                 update();
                 draw();
             }
@@ -203,3 +255,4 @@ public class SnakeEngine extends SurfaceView implements Runnable{
         thread.start();
     }
 }
+
