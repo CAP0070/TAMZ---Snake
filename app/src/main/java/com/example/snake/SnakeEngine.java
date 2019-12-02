@@ -10,6 +10,7 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.media.AudioManager;
 import android.media.SoundPool;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -39,6 +40,7 @@ public class SnakeEngine extends SurfaceView implements Runnable {
     private SurfaceHolder surfaceHolder;
     private Paint paint;
     private Bitmap[] bmp;
+    private Bitmap currHead;
     private int [] currLevel;
 
     private SoundPool soundPool;
@@ -46,7 +48,7 @@ public class SnakeEngine extends SurfaceView implements Runnable {
     private int snake_crash = -1;
 
     private int blockSize;
-    private final int BLOCK_SIZE = 40;
+    private final int BLOCK_SIZE = 24;
     private int score;
     private ArrayList<Point> snakeBody = new ArrayList<>();
     private int numBlocksHigh;
@@ -93,6 +95,7 @@ public class SnakeEngine extends SurfaceView implements Runnable {
             public void onSwipeTop() {
                 if (direction != Directions.DOWN) {
                     direction = Directions.UP;
+                    currHead = BitmapFactory.decodeResource(getResources(), R.drawable.headupwards);
                 }
             }
 
@@ -100,6 +103,7 @@ public class SnakeEngine extends SurfaceView implements Runnable {
             public void onSwipeRight() {
                 if (direction != Directions.LEFT) {
                     direction = Directions.RIGHT;
+                    currHead = BitmapFactory.decodeResource(getResources(), R.drawable.headrightwards);
                 }
             }
 
@@ -107,6 +111,7 @@ public class SnakeEngine extends SurfaceView implements Runnable {
             public void onSwipeLeft() {
                 if (direction != Directions.RIGHT) {
                     direction = Directions.LEFT;
+                    currHead = BitmapFactory.decodeResource(getResources(), R.drawable.headleftwards);
                 }
             }
 
@@ -114,6 +119,7 @@ public class SnakeEngine extends SurfaceView implements Runnable {
             public void onSwipeBottom() {
                 if (direction != Directions.UP) {
                     direction = Directions.DOWN;
+                    currHead = BitmapFactory.decodeResource(getResources(), R.drawable.headdownwards);
                 }
             }
 
@@ -123,6 +129,8 @@ public class SnakeEngine extends SurfaceView implements Runnable {
     public void newGame() {
         snakeBody.clear();
         snakeBody.add(new Point(BLOCK_SIZE / 2, numBlocksHigh / 2));
+        snakeBody.add(new Point());
+        snakeBody.add(new Point());
 
         spawnFood();
 
@@ -133,8 +141,7 @@ public class SnakeEngine extends SurfaceView implements Runnable {
 
     public void init() {
         currLevel = Levels.getLevel_1();
-
-        bmp = new Bitmap[20];
+        bmp = new Bitmap[18];
         bmp[0] = BitmapFactory.decodeResource(getResources(), R.drawable.genericbrick);
         bmp[1] = BitmapFactory.decodeResource(getResources(), R.drawable.topleftcornerbrick);
         bmp[2] = BitmapFactory.decodeResource(getResources(), R.drawable.toprightcornerbrick);
@@ -149,63 +156,54 @@ public class SnakeEngine extends SurfaceView implements Runnable {
         bmp[10] = BitmapFactory.decodeResource(getResources(), R.drawable.headupwards);
         bmp[11] = BitmapFactory.decodeResource(getResources(), R.drawable.headleftwards);
         bmp[12] = BitmapFactory.decodeResource(getResources(), R.drawable.headrightwards);
+        currHead = bmp[12];
         bmp[13] = BitmapFactory.decodeResource(getResources(), R.drawable.snakebody);
 
         bmp[14] = BitmapFactory.decodeResource(getResources(), R.drawable.lemon);
         bmp[15] = BitmapFactory.decodeResource(getResources(), R.drawable.midgetapple);
         bmp[16] = BitmapFactory.decodeResource(getResources(), R.drawable.orange);
-        invalidate();
+        bmp[17] = BitmapFactory.decodeResource(getResources(), R.drawable.stone);
     }
-
-    private static final int GENERICBRICK = 0;
-    private static final int TOPLEFTBRICK = 1;
-    private static final int TOPRIGHTBRICK = 2;
-    private static final int TOPGENERICBRICK = 3;
-    private static final int BOTTOMLEFTBRICK = 4;
-    private static final int BOTTOMRIGHTBRICK = 5;
-    private static final int BOTTOMGENERICBRICK= 6;
-    private static final int LEFTGENERICBRICK = 7;
-    private static final int RIGHTGENERICBRICK = 8;
-
-    private static final int HEADDOWNWARDS = 9;
-    private static final int HEADUPWARDS = 10;
-    private static final int HEADLEFTWARDS = 11;
-    private static final int HEADRIGHTWARDS = 12;
-    private static final int SNAKEBODY = 13;
-
-    private static final int LEMON = 14;
-    private static final int MIDGETAPPLE = 15;
-    private static final int ORANGE = 16;
 
     public void draw() {
         if (surfaceHolder.getSurface().isValid()) {
             canvas = surfaceHolder.lockCanvas();
-            canvas.drawColor(Color.argb(255, 26, 128, 182));
-            paint.setColor(Color.argb(255, 255, 255, 255));
+            canvas.drawColor(Color.argb(255, 0, 0, 0));
+            paint.setColor(Color.argb(255, 0, 0, 0));
 
             paint.setTextSize(90);
             canvas.drawText("Score:" + score, 10, 70, paint);
 
-            for (int i = 0; i < Levels.getDIMENSION() * 2; i++){
+            for (int i = 0; i < Levels.getHEIGHT(); i++){
                 {
-                    for (int j = 0; j < Levels.getDIMENSION(); j++){
-                        canvas.drawBitmap(bmp[currLevel[i * 10 + j]], null,
-                                new Rect(j * blockSize, i * blockSize, (j+1) * blockSize, (i+1) * blockSize), null);
+                    for (int j = 0; j < Levels.getWIDTH(); j++){
+                        if (currLevel[i * Levels.getWIDTH() + j] == 0) continue;
+                        canvas.drawBitmap(bmp[currLevel[i * Levels.getWIDTH() + j]], null,
+                                new Rect(i * blockSize, j * blockSize, (i+1) * blockSize, (j+1) * blockSize), null);
+                        Log.d(TAG, "j: " + (j * blockSize));
+                        Log.d(TAG, "j+1: " + ((j+1) * blockSize));
+                        Log.d(TAG, "i: " + (i * blockSize));
+                        Log.d(TAG, "i+1: " + ((i+1) * blockSize));
                     }
                 }
             }
 
             for (int i = 0; i < snakeBody.size(); i++) {
-                canvas.drawRect(snakeBody.get(i).x * blockSize, snakeBody.get(i).y * blockSize,
-                        (snakeBody.get(i).x * blockSize) + blockSize,
-                        (snakeBody.get(i).y * blockSize) + blockSize, paint);
+                if (i == 0) canvas.drawBitmap(currHead, null,
+                        new Rect(snakeBody.get(i).x * blockSize, snakeBody.get(i).y * blockSize,
+                                (snakeBody.get(i).x * blockSize) + blockSize,
+                                (snakeBody.get(i).y * blockSize) + blockSize), null);
+                else canvas.drawBitmap(bmp[13], null,
+                        new Rect(snakeBody.get(i).x * blockSize, snakeBody.get(i).y * blockSize,
+                                (snakeBody.get(i).x * blockSize) + blockSize,
+                                (snakeBody.get(i).y * blockSize) + blockSize), null);
             }
 
-            canvas.drawRect(foodX * blockSize,
-                    (foodY * blockSize),
-                    (foodX * blockSize) + blockSize,
-                    (foodY * blockSize) + blockSize,
-                    paint);
+//            canvas.drawRect(foodX * blockSize,
+//                    (foodY * blockSize),
+//                    (foodX * blockSize) + blockSize,
+//                    (foodY * blockSize) + blockSize,
+//                    paint);
 
             surfaceHolder.unlockCanvasAndPost(canvas);
         }
@@ -270,6 +268,19 @@ public class SnakeEngine extends SurfaceView implements Runnable {
     }
 
     public void update() {
+        if (snakeBody.get(0).x == foodX && snakeBody.get(0).y == foodY) {
+            foodEaten();
+        }
+
+        moveSnake();
+
+        if (detectDeath()) {
+            soundPool.play(snake_crash, 1, 1, 0, 0, 1);
+            newGame();
+        }
+    }
+
+    public void update2() {
         if (snakeBody.get(0).x == foodX && snakeBody.get(0).y == foodY) {
             foodEaten();
         }
