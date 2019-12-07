@@ -1,7 +1,6 @@
 package com.example.snake;
 
 public class Levels {
-    private static final int WALL = 0;
     private static final int EMPTY = 0;
     private static final int WIDTH = 12;
     private static final int HEIGHT = 24;

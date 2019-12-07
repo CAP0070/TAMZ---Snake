@@ -42,6 +42,7 @@ public class SnakeEngine extends SurfaceView implements Runnable {
     private Bitmap[] bmp;
     private Bitmap currHead;
     private int [] currLevel;
+    private ObjectsHandler handler = new ObjectsHandler();
 
     private SoundPool soundPool;
     private int food_eaten = -1;
@@ -65,10 +66,11 @@ public class SnakeEngine extends SurfaceView implements Runnable {
     public SnakeEngine(Context context, Point size) {
         super(context);
         this.context = context;
-        init();
-
         blockSize = size.x / BLOCK_SIZE;
         numBlocksHigh = size.y / blockSize;
+        init();
+
+
 
         soundPool = new SoundPool(10, AudioManager.STREAM_MUSIC, 0);
         try {
@@ -141,6 +143,22 @@ public class SnakeEngine extends SurfaceView implements Runnable {
 
     public void init() {
         currLevel = Levels.getLevel_1();
+        handler.clearObstacles();
+        for (int i = 0; i < Levels.getHEIGHT(); i++){
+            {
+                for (int j = 0; j < Levels.getWIDTH(); j++){
+                    if (currLevel[i * Levels.getWIDTH() + j] == 0) continue;
+
+
+                    else if (currLevel[i * Levels.getWIDTH() + j] >= 1 &&
+                            currLevel[i * Levels.getWIDTH() + j] <= 8 ||
+                            currLevel[i * Levels.getWIDTH() + j] == 17){
+                        handler.addObstacle(new Obstacle(i * blockSize, j * blockSize));
+                    }
+                }
+            }
+        }
+
         bmp = new Bitmap[18];
         bmp[0] = BitmapFactory.decodeResource(getResources(), R.drawable.genericbrick);
         bmp[1] = BitmapFactory.decodeResource(getResources(), R.drawable.topleftcornerbrick);
@@ -180,10 +198,6 @@ public class SnakeEngine extends SurfaceView implements Runnable {
                         if (currLevel[i * Levels.getWIDTH() + j] == 0) continue;
                         canvas.drawBitmap(bmp[currLevel[i * Levels.getWIDTH() + j]], null,
                                 new Rect(i * blockSize, j * blockSize, (i+1) * blockSize, (j+1) * blockSize), null);
-                        Log.d(TAG, "j: " + (j * blockSize));
-                        Log.d(TAG, "j+1: " + ((j+1) * blockSize));
-                        Log.d(TAG, "i: " + (i * blockSize));
-                        Log.d(TAG, "i+1: " + ((i+1) * blockSize));
                     }
                 }
             }
@@ -198,12 +212,6 @@ public class SnakeEngine extends SurfaceView implements Runnable {
                                 (snakeBody.get(i).x * blockSize) + blockSize,
                                 (snakeBody.get(i).y * blockSize) + blockSize), null);
             }
-
-//            canvas.drawRect(foodX * blockSize,
-//                    (foodY * blockSize),
-//                    (foodX * blockSize) + blockSize,
-//                    (foodY * blockSize) + blockSize,
-//                    paint);
 
             surfaceHolder.unlockCanvasAndPost(canvas);
         }
@@ -223,9 +231,6 @@ public class SnakeEngine extends SurfaceView implements Runnable {
     }
 
     private void moveSnake() {
-        for (Point p : snakeBody)
-            Log.d(TAG, "moveSnake: " + p.x);
-
         for (int i = snakeBody.size() - 1; i > 0; i--) {
             snakeBody.get(i).x = snakeBody.get(i - 1).x;
             snakeBody.get(i).y = snakeBody.get(i - 1).y;
@@ -252,15 +257,18 @@ public class SnakeEngine extends SurfaceView implements Runnable {
 
     private boolean detectDeath() {
         boolean dead = false;
-
-        if (snakeBody.get(0).x == -1) dead = true;
-        if (snakeBody.get(0).x >= BLOCK_SIZE) dead = true;
-        if (snakeBody.get(0).y == -1) dead = true;
-        if (snakeBody.get(0).y == numBlocksHigh) dead = true;
+        for(Obstacle obstacle : handler.getHandler()){
+            if (snakeBody.get(0).x == obstacle.getX()/blockSize &&
+                snakeBody.get(0).y == obstacle.getY()/blockSize){
+                dead = true;
+                break;
+            }
+        }
 
         for (int i = snakeBody.size() - 1; i > 0; i--) {
             if ((i > 4) && (snakeBody.get(0).x == snakeBody.get(i).x) && (snakeBody.get(0).y == snakeBody.get(i).y)) {
                 dead = true;
+                break;
             }
         }
 
@@ -268,19 +276,6 @@ public class SnakeEngine extends SurfaceView implements Runnable {
     }
 
     public void update() {
-        if (snakeBody.get(0).x == foodX && snakeBody.get(0).y == foodY) {
-            foodEaten();
-        }
-
-        moveSnake();
-
-        if (detectDeath()) {
-            soundPool.play(snake_crash, 1, 1, 0, 0, 1);
-            newGame();
-        }
-    }
-
-    public void update2() {
         if (snakeBody.get(0).x == foodX && snakeBody.get(0).y == foodY) {
             foodEaten();
         }
