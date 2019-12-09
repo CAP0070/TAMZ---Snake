@@ -1,27 +1,33 @@
 package com.example.snake;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.media.AudioManager;
 import android.media.SoundPool;
-import android.util.AttributeSet;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 
 import static android.content.ContentValues.TAG;
+import static android.content.Context.MODE_PRIVATE;
 
 public class SnakeEngine extends SurfaceView implements Runnable {
 
@@ -43,10 +49,12 @@ public class SnakeEngine extends SurfaceView implements Runnable {
     private Bitmap currHead;
     private int [] currLevel;
     private ObjectsHandler handler = new ObjectsHandler();
+    private int time = 0;
+    Thread timeThread;
 
     private SoundPool soundPool;
     private int food_eaten = -1;
-    private int snake_crash = -1;
+    private int food_spawn = -1;
 
     private int blockSize;
     private final int BLOCK_SIZE = 24;
@@ -58,30 +66,33 @@ public class SnakeEngine extends SurfaceView implements Runnable {
     private int foodY;
 
     private long nextFrameTime;
-    private final long FPS = 10;
+    private final long FPS = 7;
     private final long MILLIS_PER_SECOND = 1000;
 
+
     private volatile boolean isPlaying;
+    SnakeEngineDatabase database;
+
+
 
     public SnakeEngine(Context context, Point size) {
         super(context);
         this.context = context;
+        database = new SnakeEngineDatabase(context);
+
         blockSize = size.x / BLOCK_SIZE;
         numBlocksHigh = size.y / blockSize;
         init();
-
-
-
         soundPool = new SoundPool(10, AudioManager.STREAM_MUSIC, 0);
         try {
             AssetManager assetManager = context.getAssets();
             AssetFileDescriptor descriptor;
 
-            descriptor = assetManager.openFd("get_mouse_sound.ogg");
+            descriptor = assetManager.openFd("sounds/appleDeath.mp3");
             food_eaten = soundPool.load(descriptor, 0);
 
-            descriptor = assetManager.openFd("death_sound.ogg");
-            snake_crash = soundPool.load(descriptor, 0);
+            descriptor = assetManager.openFd("sounds/appleSpawn.mp3");
+            food_spawn = soundPool.load(descriptor, 0);
 
         } catch (IOException e) {
 
@@ -89,9 +100,6 @@ public class SnakeEngine extends SurfaceView implements Runnable {
 
         surfaceHolder = getHolder();
         paint = new Paint();
-
-
-        newGame();
         this.setOnTouchListener(new SnakeSwipeListener(getContext()) {
             @Override
             public void onSwipeTop() {
@@ -126,23 +134,74 @@ public class SnakeEngine extends SurfaceView implements Runnable {
             }
 
         });
+        Runnable runnable = () -> {
+            while (true){
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                time++;
+            }
+        };
+        timeThread = new Thread(runnable);
+        timeThread.start();
+
+        newGame();
     }
 
     public void newGame() {
-        snakeBody.clear();
-        snakeBody.add(new Point(BLOCK_SIZE / 2, numBlocksHigh / 2));
-        snakeBody.add(new Point());
-        snakeBody.add(new Point());
-
-        spawnFood();
-
+        init();
         score = 0;
-
+        extractDataFromDatabase();
+        spawnFood();
         nextFrameTime = System.currentTimeMillis();
     }
 
+    private void extractDataFromDatabase() {
+        snakeBody.clear();
+
+        String entries = SnakeEngineDatabase.getEntries();
+        //12x6y1s0t0
+        time = Integer.parseInt(entries.substring(entries.length()-1));
+        entries = entries.substring(0, entries.indexOf('t'));
+
+        score = Integer.parseInt(entries.substring(entries.length()-1));
+        entries = entries.substring(0, entries.indexOf('s'));
+
+        int direction = Integer.parseInt(entries.substring(entries.length()-1));
+        entries = entries.substring(0, entries.length()-1);
+        switch (direction){
+            case 1: this.direction = Directions.RIGHT;
+                currHead = BitmapFactory.decodeResource(getResources(), R.drawable.headrightwards);
+                break;
+            case 2: this.direction = Directions.LEFT;
+                currHead = BitmapFactory.decodeResource(getResources(), R.drawable.headleftwards);
+                break;
+            case 3: this.direction = Directions.UP;
+                currHead = BitmapFactory.decodeResource(getResources(), R.drawable.headupwards);
+                break;
+            case 4: this.direction = Directions.DOWN;
+                currHead = BitmapFactory.decodeResource(getResources(), R.drawable.headdownwards);
+                break;
+        }
+
+        while (entries.contains("x")){
+            int x = Integer.parseInt(entries.substring(0, entries.indexOf('x')));
+            int y = Integer.parseInt(entries.substring(entries.indexOf('x')+1, entries.indexOf('y')));
+            snakeBody.add(new Point(x, y));
+            entries = entries.substring(entries.indexOf('y')+1);
+            Log.d(TAG, "newGame: ahoj");
+        }
+    }
+
+    public int loadLevelFromSharedPreferences(){
+        SharedPreferences sharedPreferences = context.getSharedPreferences(SnakeActivity.SHARED_PREFERENCES, MODE_PRIVATE);
+        return sharedPreferences.getInt(LevelSelectionActivity.LEVEL, 1);
+    }
+
     public void init() {
-        currLevel = Levels.getLevel_1();
+        currLevel = LevelLoader.loadLevel(this, loadLevelFromSharedPreferences(), 12, 24);
         handler.clearObstacles();
         for (int i = 0; i < Levels.getHEIGHT(); i++){
             {
@@ -151,15 +210,16 @@ public class SnakeEngine extends SurfaceView implements Runnable {
 
 
                     else if (currLevel[i * Levels.getWIDTH() + j] >= 1 &&
-                            currLevel[i * Levels.getWIDTH() + j] <= 8 ||
-                            currLevel[i * Levels.getWIDTH() + j] == 17){
+                             currLevel[i * Levels.getWIDTH() + j] <= 8  ||
+                             currLevel[i * Levels.getWIDTH() + j] == 17 ||
+                             currLevel[i * Levels.getWIDTH() + j] == 18 ){
                         handler.addObstacle(new Obstacle(i * blockSize, j * blockSize));
                     }
                 }
             }
         }
 
-        bmp = new Bitmap[18];
+        bmp = new Bitmap[19];
         bmp[0] = BitmapFactory.decodeResource(getResources(), R.drawable.genericbrick);
         bmp[1] = BitmapFactory.decodeResource(getResources(), R.drawable.topleftcornerbrick);
         bmp[2] = BitmapFactory.decodeResource(getResources(), R.drawable.toprightcornerbrick);
@@ -174,27 +234,25 @@ public class SnakeEngine extends SurfaceView implements Runnable {
         bmp[10] = BitmapFactory.decodeResource(getResources(), R.drawable.headupwards);
         bmp[11] = BitmapFactory.decodeResource(getResources(), R.drawable.headleftwards);
         bmp[12] = BitmapFactory.decodeResource(getResources(), R.drawable.headrightwards);
-        currHead = bmp[12];
         bmp[13] = BitmapFactory.decodeResource(getResources(), R.drawable.snakebody);
 
         bmp[14] = BitmapFactory.decodeResource(getResources(), R.drawable.lemon);
         bmp[15] = BitmapFactory.decodeResource(getResources(), R.drawable.midgetapple);
         bmp[16] = BitmapFactory.decodeResource(getResources(), R.drawable.orange);
         bmp[17] = BitmapFactory.decodeResource(getResources(), R.drawable.stone);
+        bmp[18] = BitmapFactory.decodeResource(getResources(), R.drawable.genericbrick);
     }
 
     public void draw() {
         if (surfaceHolder.getSurface().isValid()) {
             canvas = surfaceHolder.lockCanvas();
             canvas.drawColor(Color.argb(255, 0, 0, 0));
-            paint.setColor(Color.argb(255, 0, 0, 0));
 
-            paint.setTextSize(90);
-            canvas.drawText("Score:" + score, 10, 70, paint);
+
 
             for (int i = 0; i < Levels.getHEIGHT(); i++){
                 {
-                    for (int j = 0; j < Levels.getWIDTH(); j++){
+                    for (int j = 1; j < Levels.getWIDTH(); j++){
                         if (currLevel[i * Levels.getWIDTH() + j] == 0) continue;
                         canvas.drawBitmap(bmp[currLevel[i * Levels.getWIDTH() + j]], null,
                                 new Rect(i * blockSize, j * blockSize, (i+1) * blockSize, (j+1) * blockSize), null);
@@ -213,6 +271,16 @@ public class SnakeEngine extends SurfaceView implements Runnable {
                                 (snakeBody.get(i).y * blockSize) + blockSize), null);
             }
 
+            canvas.drawBitmap(bmp[14], null,
+                    new Rect(foodX * blockSize, foodY * blockSize,
+                            (foodX * blockSize) + blockSize,
+                            (foodY * blockSize) + blockSize), null);
+
+            paint.setColor(Color.argb(255, 255, 255, 255));
+            paint.setTextSize(75);
+            canvas.drawText("Score:" + score, 15, 55, paint);
+            canvas.drawText("Time:" + time, 500, 55, paint);
+
             surfaceHolder.unlockCanvasAndPost(canvas);
         }
     }
@@ -221,6 +289,18 @@ public class SnakeEngine extends SurfaceView implements Runnable {
         Random random = new Random();
         foodX = random.nextInt(BLOCK_SIZE - 1) + 1;
         foodY = random.nextInt(numBlocksHigh - 1) + 1;
+        for (Obstacle obstacle : handler.getHandler()){ //jidlo se nesmi spawnout na prekazce
+            if (obstacle.getX()/blockSize == foodX && obstacle.getY()/blockSize == foodY){
+                spawnFood();
+            }
+        }
+
+        for (Point p : snakeBody){ //jidlo se nesmi spawnout na tele hada
+            if (p.x == foodX && p.y == foodY){
+                spawnFood();
+            }
+        }
+        soundPool.play(food_spawn, 1, 1, 0, 0, 1);
     }
 
     private void foodEaten() {
@@ -235,6 +315,23 @@ public class SnakeEngine extends SurfaceView implements Runnable {
             snakeBody.get(i).x = snakeBody.get(i - 1).x;
             snakeBody.get(i).y = snakeBody.get(i - 1).y;
         }
+
+        String aux = "";
+        for (Point p : snakeBody){
+            aux += p.x + "x" + p.y + "y";
+        }
+        if (direction == Directions.RIGHT){
+            aux += "1";
+        } else if (direction == Directions.LEFT) {
+            aux += "2";
+        } else if (direction == Directions.UP) {
+            aux += "3";
+        } else if (direction == Directions.DOWN) {
+            aux += "4";
+        }
+        aux += "s"+score;
+        aux += "t"+time;
+        SnakeEngineDatabase.UpdateData(aux);
 
         switch (direction) {
             case UP:
@@ -272,7 +369,28 @@ public class SnakeEngine extends SurfaceView implements Runnable {
             }
         }
 
+        if (dead){
+            SnakeEngineDatabase.UpdateData("12x6y1s0t0");
+            checkHighscorePreferences();
+            time = 0;
+        }
+
         return dead;
+    }
+
+    public void checkHighscorePreferences(){
+        if (score > loadHighscoreFromPreferences()) {
+            SharedPreferences sharedPreferences = context.getSharedPreferences(SnakeActivity.SHARED_PREFERENCES, MODE_PRIVATE);
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putInt(SnakeActivity.HIGHSCORE, score);
+            editor.apply();
+            Log.d(TAG, "checkHighscorePreferences: new: " + score);
+        }
+    }
+
+    public int loadHighscoreFromPreferences(){
+        SharedPreferences sharedPreferences = context.getSharedPreferences(SnakeActivity.SHARED_PREFERENCES, MODE_PRIVATE);
+        return sharedPreferences.getInt(SnakeActivity.HIGHSCORE, 0);
     }
 
     public void update() {
@@ -283,7 +401,7 @@ public class SnakeEngine extends SurfaceView implements Runnable {
         moveSnake();
 
         if (detectDeath()) {
-            soundPool.play(snake_crash, 1, 1, 0, 0, 1);
+            soundPool.play(food_spawn, 1, 1, 0, 0, 1);
             newGame();
         }
     }
@@ -309,8 +427,8 @@ public class SnakeEngine extends SurfaceView implements Runnable {
         isPlaying = false;
         try {
             thread.join();
-        } catch (InterruptedException e) {
-            // Error
+        } catch (Exception e) {
+            Log.d(TAG, "pause: " + e);
         }
     }
 
