@@ -11,6 +11,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String TABLE_NAME = "coordinates_table";
     public static final String COL_1 = "ID";
     public static final String COL_2 = "COORDINATES";
+    public static final String COL_3 = "TIME";
+    public static final String COL_4 = "SCORE";
+    public static final String COL_5 = "DIRECTION";
+    public static final String COL_6 = "FOOD";
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, 1);

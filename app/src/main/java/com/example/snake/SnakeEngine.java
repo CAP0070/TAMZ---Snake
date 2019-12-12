@@ -1,15 +1,12 @@
 package com.example.snake;
 
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.media.AudioManager;
@@ -19,11 +16,9 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.widget.Toast;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Random;
 
 import static android.content.ContentValues.TAG;
@@ -49,8 +44,11 @@ public class SnakeEngine extends SurfaceView implements Runnable {
     private Bitmap currHead;
     private int [] currLevel;
     private ObjectsHandler handler = new ObjectsHandler();
-    private int time = 0;
+    private int time;
     Thread timeThread;
+    Thread twitterThread;
+    private static TwitterSender twitter = new TwitterSender();
+    private static Geolocator geolocator = new Geolocator();
 
     private SoundPool soundPool;
     private int food_eaten = -1;
@@ -100,6 +98,31 @@ public class SnakeEngine extends SurfaceView implements Runnable {
 
         surfaceHolder = getHolder();
         paint = new Paint();
+
+        setListeners();
+        setTimer();
+        newGame();
+        twitter.configureTwitter();
+        geolocator.setGeo();
+    }
+
+    private void setTimer() {
+        Runnable runnable = () -> {
+            while (true){
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                time++;
+            }
+        };
+        timeThread = new Thread(runnable);
+        timeThread.start();
+    }
+
+
+    private void setListeners() {
         this.setOnTouchListener(new SnakeSwipeListener(getContext()) {
             @Override
             public void onSwipeTop() {
@@ -134,20 +157,6 @@ public class SnakeEngine extends SurfaceView implements Runnable {
             }
 
         });
-        Runnable runnable = () -> {
-            while (true){
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                time++;
-            }
-        };
-        timeThread = new Thread(runnable);
-        timeThread.start();
-
-        newGame();
     }
 
     public void newGame() {
@@ -373,6 +382,7 @@ public class SnakeEngine extends SurfaceView implements Runnable {
             SnakeEngineDatabase.UpdateData("12x6y1s0t0");
             checkHighscorePreferences();
             time = 0;
+            twitter.sendTweet(score, geolocator.city);
         }
 
         return dead;
