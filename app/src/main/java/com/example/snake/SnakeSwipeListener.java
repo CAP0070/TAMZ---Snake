@@ -1,11 +1,14 @@
 package com.example.snake;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
+
+import static android.content.ContentValues.TAG;
 
 public class SnakeSwipeListener implements OnTouchListener {
 
@@ -26,7 +29,9 @@ public class SnakeSwipeListener implements OnTouchListener {
         private static final int SWIPE_VELOCITY_THRESHOLD = 100;
 
         @Override
-        public boolean onDown(MotionEvent e) {
+        public boolean onDown(MotionEvent event) {
+            clicked(event);
+
             return true;
         }
 
@@ -60,6 +65,10 @@ public class SnakeSwipeListener implements OnTouchListener {
             return result;
         }
     }
+
+    public void clicked(MotionEvent event) {
+    }
+
 
     public void onSwipeRight() {
     }

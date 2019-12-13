@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -12,10 +13,12 @@ import android.graphics.Rect;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.view.View;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -64,11 +67,12 @@ public class SnakeEngine extends SurfaceView implements Runnable {
     private int foodY;
 
     private long nextFrameTime;
-    private final long FPS = 7;
+    private long FPS = 7;
     private final long MILLIS_PER_SECOND = 1000;
 
 
     private volatile boolean isPlaying;
+    private volatile boolean soundOn = true;
     SnakeEngineDatabase database;
 
 
@@ -125,6 +129,19 @@ public class SnakeEngine extends SurfaceView implements Runnable {
     private void setListeners() {
         this.setOnTouchListener(new SnakeSwipeListener(getContext()) {
             @Override
+            public void clicked(MotionEvent event){
+                if (event.getX() >= 19 * blockSize && event.getX() <= (19 * blockSize) + blockSize
+                        && event.getY() >= 0 * blockSize && event.getY() <= (0 * blockSize) + blockSize - 5)
+                    FPS++;
+                else if (event.getX() >= 20 * blockSize + blockSize / 2 && event.getX() <= (20 * blockSize) + blockSize / 2 + blockSize
+                        && event.getY() >= 0 * blockSize && event.getY() <= (0 * blockSize) + blockSize - 5 && FPS > 1) {
+                    FPS--;
+                } else if (event.getX() >= 22 * blockSize + blockSize / 2 && event.getX() <= (22 * blockSize) + blockSize / 2 + blockSize
+                        && event.getY() >= 0 * blockSize && event.getY() <= (0 * blockSize) + blockSize - 5)
+                    soundOn = !soundOn;
+            }
+
+            @Override
             public void onSwipeTop() {
                 if (direction != Directions.DOWN) {
                     direction = Directions.UP;
@@ -155,7 +172,6 @@ public class SnakeEngine extends SurfaceView implements Runnable {
                     currHead = BitmapFactory.decodeResource(getResources(), R.drawable.headdownwards);
                 }
             }
-
         });
     }
 
@@ -163,24 +179,27 @@ public class SnakeEngine extends SurfaceView implements Runnable {
         init();
         score = 0;
         extractDataFromDatabase();
-        spawnFood();
         nextFrameTime = System.currentTimeMillis();
     }
 
     private void extractDataFromDatabase() {
         snakeBody.clear();
 
-        String entries = SnakeEngineDatabase.getEntries();
-        //12x6y1s0t0
-        time = Integer.parseInt(entries.substring(entries.length()-1));
-        entries = entries.substring(0, entries.indexOf('t'));
+        Cursor entries = SnakeEngineDatabase.getEntries();
+        entries.moveToNext();
+        String coords = entries.getString(1);
+        while (coords.contains("x")){
+            int x = Integer.parseInt(coords.substring(0, coords.indexOf('x')));
+            int y = Integer.parseInt(coords.substring(coords.indexOf('x')+1, coords.indexOf('y')));
+            snakeBody.add(new Point(x, y));
+            coords = coords.substring(coords.indexOf('y')+1);
+            Log.d(TAG, "newGame: ahoj");
+        }
 
-        score = Integer.parseInt(entries.substring(entries.length()-1));
-        entries = entries.substring(0, entries.indexOf('s'));
-
-        int direction = Integer.parseInt(entries.substring(entries.length()-1));
-        entries = entries.substring(0, entries.length()-1);
-        switch (direction){
+        Log.d(TAG, "extractDataFromDatabase: " + entries.getString(0));
+        time = Integer.parseInt(entries.getString(2));
+        score = Integer.parseInt(entries.getString(3));
+        switch (Integer.parseInt(entries.getString(4))){
             case 1: this.direction = Directions.RIGHT;
                 currHead = BitmapFactory.decodeResource(getResources(), R.drawable.headrightwards);
                 break;
@@ -194,14 +213,11 @@ public class SnakeEngine extends SurfaceView implements Runnable {
                 currHead = BitmapFactory.decodeResource(getResources(), R.drawable.headdownwards);
                 break;
         }
-
-        while (entries.contains("x")){
-            int x = Integer.parseInt(entries.substring(0, entries.indexOf('x')));
-            int y = Integer.parseInt(entries.substring(entries.indexOf('x')+1, entries.indexOf('y')));
-            snakeBody.add(new Point(x, y));
-            entries = entries.substring(entries.indexOf('y')+1);
-            Log.d(TAG, "newGame: ahoj");
-        }
+        String foodCoords = entries.getString(5);
+        foodX = Integer.parseInt(foodCoords.substring(0, foodCoords.indexOf('x')));
+        foodY = Integer.parseInt(foodCoords.substring(foodCoords.indexOf('x')+1, foodCoords.indexOf('y')));
+        soundOn = Integer.parseInt(entries.getString(6)) == 1 ? true : false;
+        FPS = Long.parseLong(entries.getString(7));
     }
 
     public int loadLevelFromSharedPreferences(){
@@ -228,7 +244,7 @@ public class SnakeEngine extends SurfaceView implements Runnable {
             }
         }
 
-        bmp = new Bitmap[19];
+        bmp = new Bitmap[23];
         bmp[0] = BitmapFactory.decodeResource(getResources(), R.drawable.genericbrick);
         bmp[1] = BitmapFactory.decodeResource(getResources(), R.drawable.topleftcornerbrick);
         bmp[2] = BitmapFactory.decodeResource(getResources(), R.drawable.toprightcornerbrick);
@@ -250,6 +266,12 @@ public class SnakeEngine extends SurfaceView implements Runnable {
         bmp[16] = BitmapFactory.decodeResource(getResources(), R.drawable.orange);
         bmp[17] = BitmapFactory.decodeResource(getResources(), R.drawable.stone);
         bmp[18] = BitmapFactory.decodeResource(getResources(), R.drawable.genericbrick);
+
+        bmp[19] = BitmapFactory.decodeResource(getResources(), R.drawable.plusicon);
+        bmp[20] = BitmapFactory.decodeResource(getResources(), R.drawable.minusicon);
+
+        bmp[21] = BitmapFactory.decodeResource(getResources(), R.drawable.soundon);
+        bmp[22] = BitmapFactory.decodeResource(getResources(), R.drawable.soundoff);
     }
 
     public void draw() {
@@ -285,10 +307,26 @@ public class SnakeEngine extends SurfaceView implements Runnable {
                             (foodX * blockSize) + blockSize,
                             (foodY * blockSize) + blockSize), null);
 
+            canvas.drawBitmap(bmp[19], null,
+                    new Rect(19 * blockSize, 0 * blockSize,
+                            (19 * blockSize) + blockSize,
+                            (0 * blockSize) + blockSize-5), null);
+
+            canvas.drawBitmap(bmp[20], null,
+                    new Rect(20 * blockSize + blockSize/2, 0 * blockSize,
+                            (20 * blockSize) + blockSize/2 + blockSize,
+                            (0 * blockSize) + blockSize-5), null);
+
+            canvas.drawBitmap(bmp[soundOn ? 21 : 22], null,
+                    new Rect(22 * blockSize + blockSize/2, 0 * blockSize,
+                            (22 * blockSize) + blockSize/2 + blockSize,
+                            (0 * blockSize) + blockSize-5), null);
+
             paint.setColor(Color.argb(255, 255, 255, 255));
             paint.setTextSize(75);
             canvas.drawText("Score:" + score, 15, 55, paint);
             canvas.drawText("Time:" + time, 500, 55, paint);
+
 
             surfaceHolder.unlockCanvasAndPost(canvas);
         }
@@ -309,14 +347,14 @@ public class SnakeEngine extends SurfaceView implements Runnable {
                 spawnFood();
             }
         }
-        soundPool.play(food_spawn, 1, 1, 0, 0, 1);
+        if (soundOn) soundPool.play(food_spawn, 1, 1, 0, 0, 1);
     }
 
     private void foodEaten() {
         snakeBody.add(new Point());
         spawnFood();
         score = score + 1;
-        soundPool.play(food_eaten, 1, 1, 0, 0, 1);
+        if (soundOn) soundPool.play(food_eaten, 1, 1, 0, 0, 1);
     }
 
     private void moveSnake() {
@@ -326,21 +364,21 @@ public class SnakeEngine extends SurfaceView implements Runnable {
         }
 
         String aux = "";
+        String directionAux = "";
         for (Point p : snakeBody){
             aux += p.x + "x" + p.y + "y";
         }
         if (direction == Directions.RIGHT){
-            aux += "1";
+            directionAux = "1";
         } else if (direction == Directions.LEFT) {
-            aux += "2";
+            directionAux = "2";
         } else if (direction == Directions.UP) {
-            aux += "3";
+            directionAux = "3";
         } else if (direction == Directions.DOWN) {
-            aux += "4";
+            directionAux = "4";
         }
-        aux += "s"+score;
-        aux += "t"+time;
-        SnakeEngineDatabase.UpdateData(aux);
+        SnakeEngineDatabase.UpdateData(aux, String.valueOf(time), String.valueOf(score), directionAux,
+                foodX + "x" + foodY + "y", soundOn ? "1" : "0", String.valueOf(FPS));
 
         switch (direction) {
             case UP:
@@ -379,13 +417,22 @@ public class SnakeEngine extends SurfaceView implements Runnable {
         }
 
         if (dead){
-            SnakeEngineDatabase.UpdateData("12x6y1s0t0");
+            SnakeEngineDatabase.UpdateData("12x6y", "0", "0", "1" , "4x6y", soundOn ? "1" : "0", String.valueOf(FPS));
             checkHighscorePreferences();
             time = 0;
-            twitter.sendTweet(score, geolocator.city);
+            sendTweet();
+            Log.d(TAG, "detectDeath: ");
         }
 
         return dead;
+    }
+
+    private void sendTweet() {
+        Runnable runnable = () -> {
+            twitter.sendTweet(score, geolocator.city);
+        };
+        twitterThread = new Thread(runnable);
+        twitterThread.start();
     }
 
     public void checkHighscorePreferences(){

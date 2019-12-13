@@ -14,25 +14,22 @@ public class SnakeEngineDatabase {
 //        context.deleteDatabase("Snake.db");
 
         myDb = new DatabaseHelper(context);
-//        addData();
-        viewAll();
+//        viewAll();
     }
 
-    public static String getEntries() {
+    public static Cursor getEntries() {
         Cursor res = myDb.getAllData();
         if(res.getCount() == 0) {
-            return "12x6y1s0t0";
+            addData();
+            getEntries();
         }
 
-        StringBuffer buffer = new StringBuffer();
-        while (res.moveToNext()) {
-            return res.getString(1);
-        }
-        return res.getString(1);
+        return res;
     }
 
-    public static void UpdateData(String coordinates) {
-        boolean isUpdate = myDb.updateData("1", coordinates);
+    public static void UpdateData(String coordinates, String time, String score,
+                                  String direction, String food, String sound, String fps) {
+        boolean isUpdate = myDb.updateData("1", coordinates, time, score, direction, food, sound, fps);
     }
 
     public void viewAll() {
@@ -43,8 +40,8 @@ public class SnakeEngineDatabase {
         }
     }
 
-    public void addData(){
-        boolean isInserted = myDb.insertData("12x6y1s0t0");
+    public static void addData(){
+        myDb.insertData("12x6y", "0", "0", "1", "4x6y", "1", "10");
     }
 
     public void deleteData(){

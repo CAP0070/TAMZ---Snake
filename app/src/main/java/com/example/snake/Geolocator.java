@@ -103,8 +103,6 @@ public class Geolocator implements LocationListener {
         } else {
 
         }
-
-
     }
 
     @Override

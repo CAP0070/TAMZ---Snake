@@ -15,6 +15,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COL_4 = "SCORE";
     public static final String COL_5 = "DIRECTION";
     public static final String COL_6 = "FOOD";
+    public static final String COL_7 = "SOUND";
+    public static final String COL_8 = "FPS";
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, 1);
@@ -22,7 +24,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL("create table " + TABLE_NAME +" (ID INTEGER PRIMARY KEY AUTOINCREMENT, COORDINATES TEXT)");
+        db.execSQL("create table " + TABLE_NAME +" (ID INTEGER PRIMARY KEY AUTOINCREMENT, COORDINATES TEXT, TIME TEXT, " +
+                                                    "SCORE TEXT, DIRECTION TEXT, FOOD TEXT, SOUND TEXT, FPS TEXT)");
     }
 
     @Override
@@ -43,10 +46,45 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             return true;
     }
 
+    public boolean insertData(String coordinates, String time, String score,
+                              String direction, String food, String sound, String fps) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(COL_2, coordinates);
+        contentValues.put(COL_3, time);
+        contentValues.put(COL_4, score);
+        contentValues.put(COL_5, direction);
+        contentValues.put(COL_6, food);
+        contentValues.put(COL_7, sound);
+        contentValues.put(COL_8, fps);
+
+        long result = db.insert(TABLE_NAME,null ,contentValues);
+        if(result == -1)
+            return false;
+        else
+            return true;
+    }
+
     public Cursor getAllData() {
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor res = db.rawQuery("select * from "+TABLE_NAME,null);
         return res;
+    }
+
+    public boolean updateData(String id, String coordinates, String time, String score,
+                              String direction, String food, String sound, String fps) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(COL_1, id);
+        contentValues.put(COL_2, coordinates);
+        contentValues.put(COL_3, time);
+        contentValues.put(COL_4, score);
+        contentValues.put(COL_5, direction);
+        contentValues.put(COL_6, food);
+        contentValues.put(COL_7, sound);
+        contentValues.put(COL_8, fps);
+        db.update(TABLE_NAME, contentValues, "ID = ?",new String[] { id });
+        return true;
     }
 
     public boolean updateData(String id, String name) {

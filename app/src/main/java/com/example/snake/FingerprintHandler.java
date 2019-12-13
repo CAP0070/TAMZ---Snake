@@ -20,6 +20,17 @@ public class FingerprintHandler extends FingerprintManager.AuthenticationCallbac
 
     private Context context;
     private CancellationSignal cancellationSignal;
+    private boolean wasAuthenticated = false;
+
+    private static FingerprintHandler single_instance = null;
+    public static FingerprintHandler getInstance(Context context)
+    {
+        if (single_instance == null)
+        {
+            single_instance = new FingerprintHandler(context);
+        }
+        return single_instance;
+    }
 
     public FingerprintHandler(Context context){
         this.context = context;
@@ -48,6 +59,11 @@ public class FingerprintHandler extends FingerprintManager.AuthenticationCallbac
     @Override
     public void onAuthenticationSucceeded(FingerprintManager.AuthenticationResult result) {
         Log.d(TAG, "onAuthenticationSucceeded: ");
+        wasAuthenticated = true;
     }
 
+    public boolean getAuthenticated() {
+        Log.d(TAG, "getAuthenticated: " + wasAuthenticated);
+        return this.wasAuthenticated;
+    }
 }

@@ -41,6 +41,8 @@ public class MainMenuActivity extends Activity {
     private String KEY_NAME = "AndroidKey";
     private FingerprintManager fingerprintManager;
     private KeyguardManager keyguardManager;
+    private FingerprintHandler fingerprintHandler = FingerprintHandler.getInstance(this);
+    private boolean Authenticated = false;
 
 
 
@@ -49,8 +51,10 @@ public class MainMenuActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_menu);
         setListeners();
-        setAuthentication();
+        if (!fingerprintHandler.getAuthenticated()) setAuthentication();
+
     }
+
 
     private void setAuthentication() {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -72,7 +76,6 @@ public class MainMenuActivity extends Activity {
 
                 if (cipherInit()){
                     FingerprintManager.CryptoObject cryptoObject = new FingerprintManager.CryptoObject(cipher);
-                    FingerprintHandler fingerprintHandler = new FingerprintHandler(this);
                     fingerprintHandler.startAuth(fingerprintManager, cryptoObject);
                 }
             }
