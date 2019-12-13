@@ -1,4 +1,4 @@
-package com.example.snake;
+package com.example.snake.snake;
 
 import android.content.Context;
 import android.util.Log;

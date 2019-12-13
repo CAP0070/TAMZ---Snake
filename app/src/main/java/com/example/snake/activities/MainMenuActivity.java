@@ -1,4 +1,4 @@
-package com.example.snake;
+package com.example.snake.activities;
 
 import android.Manifest;
 import android.annotation.TargetApi;
@@ -13,10 +13,12 @@ import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyPermanentlyInvalidatedException;
 import android.security.keystore.KeyProperties;
 
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
-import android.view.View;
+
 import android.widget.Button;
+
+import com.example.snake.R;
+import com.example.snake.other.FingerprintHandler;
 
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;

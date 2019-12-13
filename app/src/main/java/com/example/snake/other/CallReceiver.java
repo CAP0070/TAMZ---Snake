@@ -1,12 +1,11 @@
-package com.example.snake;
+package com.example.snake.other;
 
-import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.telephony.TelephonyManager;
-import android.view.Gravity;
-import android.widget.Toast;
+
+import com.example.snake.activities.SnakeActivity;
 
 public class CallReceiver extends BroadcastReceiver {
     @Override

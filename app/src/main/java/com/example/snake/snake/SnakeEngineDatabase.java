@@ -1,9 +1,10 @@
-package com.example.snake;
+package com.example.snake.snake;
 
 import android.app.AlertDialog;
 import android.content.Context;
 import android.database.Cursor;
-import android.widget.Toast;
+
+import com.example.snake.other.DatabaseHelper;
 
 public class SnakeEngineDatabase {
     private static DatabaseHelper myDb;

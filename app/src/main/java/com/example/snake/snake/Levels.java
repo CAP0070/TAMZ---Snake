@@ -1,4 +1,4 @@
-package com.example.snake;
+package com.example.snake.snake;
 
 public class Levels {
     private static final int EMPTY = 0;

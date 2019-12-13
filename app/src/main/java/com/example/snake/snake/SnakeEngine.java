@@ -1,4 +1,4 @@
-package com.example.snake;
+package com.example.snake.snake;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -18,7 +18,12 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.view.View;
+
+import com.example.snake.R;
+import com.example.snake.activities.SnakeActivity;
+import com.example.snake.other.Geolocator;
+import com.example.snake.activities.LevelSelectionActivity;
+import com.example.snake.other.TwitterSender;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -421,7 +426,6 @@ public class SnakeEngine extends SurfaceView implements Runnable {
             checkHighscorePreferences();
             time = 0;
             sendTweet();
-            Log.d(TAG, "detectDeath: ");
         }
 
         return dead;

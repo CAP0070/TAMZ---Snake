@@ -1,17 +1,11 @@
-package com.example.snake;
-
-import android.util.Log;
+package com.example.snake.snake;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Stream;
-
-import static android.content.ContentValues.TAG;
 
 public class LevelLoader {
     private int currLevel = 1;

@@ -1,4 +1,4 @@
-package com.example.snake;
+package com.example.snake.other;
 
 import android.content.ContentValues;
 import android.content.Context;

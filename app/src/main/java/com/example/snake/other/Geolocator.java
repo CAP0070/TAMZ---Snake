@@ -1,4 +1,4 @@
-package com.example.snake;
+package com.example.snake.other;
 
 import android.Manifest;
 import android.content.Context;
@@ -11,10 +11,11 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+
+import com.example.snake.activities.SnakeActivity;
 
 import java.util.List;
 import java.util.Locale;
@@ -24,9 +25,9 @@ import static android.content.ContentValues.TAG;
 public class Geolocator implements LocationListener {
     private LocationManager locationManager;
     private String provider = "";
-    String city = "";
+    public String city = "";
 
-    void setGeo() {
+    public void setGeo() {
         locationManager = (LocationManager) SnakeActivity.getInstance().getSystemService(Context.LOCATION_SERVICE);
 
         Criteria criteria = new Criteria();

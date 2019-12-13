@@ -1,4 +1,4 @@
-package com.example.snake;
+package com.example.snake.other;
 
 import android.text.format.DateFormat;
 import android.util.Log;

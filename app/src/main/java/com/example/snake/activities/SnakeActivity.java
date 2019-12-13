@@ -1,28 +1,18 @@
-package com.example.snake;
+package com.example.snake.activities;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.graphics.Point;
 import android.os.Bundle;
-import android.telephony.PhoneStateListener;
-import android.telephony.TelephonyManager;
-import android.util.Log;
 import android.view.Display;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import static android.content.ContentValues.TAG;
+import com.example.snake.snake.SnakeEngine;
 
 public class SnakeActivity extends Activity {
     SnakeEngine snakeEngine;
@@ -64,13 +54,13 @@ public class SnakeActivity extends Activity {
 
 
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
         snakeEngine.resume();
     }
 
     @Override
-    protected void onPause() {
+    public void onPause() {
         super.onPause();
         snakeEngine.pause();
     }

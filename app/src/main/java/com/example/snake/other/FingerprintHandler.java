@@ -1,17 +1,11 @@
-package com.example.snake;
+package com.example.snake.other;
 
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.hardware.fingerprint.FingerprintManager;
-import android.media.Image;
 import android.os.Build;
 import android.os.CancellationSignal;
 import android.util.Log;
-import android.widget.ImageView;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import static android.content.ContentValues.TAG;
 
