@@ -34,11 +34,11 @@ public class TwitterSender {
     public void sendTweet(int score, String city) {
         String latestStatus = "Prave jsem ziskal " + score + " skore v Snakovi v " + city + (score >= 10 ? ", jsem boss" : "");
         Log.d(TAG, "sendTweet: " + latestStatus);
-//        try {
-//            Status status = twitter.updateStatus(latestStatus);
-//        } catch (TwitterException e) {
-//            e.printStackTrace();
-//        }
+        try {
+            Status status = twitter.updateStatus(latestStatus);
+        } catch (TwitterException e) {
+            e.printStackTrace();
+        }
 
     }
 
