@@ -10,5 +10,6 @@ TAMZ2 - Snake projekt
 - Možnost vypnout / zapnout zvuky
 - Možnost zrychlit / zpomalit hru
 - Thread na nezávislé počítání času 
+- Získávání geolokace
 - Po úmrtí nový thread vypíše na twitter získáne skóre + aktuální geolokaci 
 - Odemknutí aplikace pouze otiskem prstu
