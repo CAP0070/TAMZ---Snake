@@ -3,7 +3,7 @@ TAMZ2 - Snake projekt
 - Lokální ukládání highscore
 - Ovládání gesty
 - Dva různé levely načítáné ze souboru
-- Menu s výběrem levelu, highscore, exit a play
+- Menu s výběrem levelu, highscore a play
 - Pausnutí hry, pokud někdo zavolá
 - Grafika + zvuky
 - Ukládání aktuálního stavu hry do databáze (autosave)
