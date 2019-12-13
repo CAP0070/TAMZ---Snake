@@ -140,35 +140,22 @@ public class MainMenuActivity extends Activity {
     }
 
     private void setListeners(){
-        Button playButton = (Button) findViewById(R.id.playButton);
-        playButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                Intent intent = new Intent(MainMenuActivity.this, SnakeActivity.class);
-                startActivity(intent);
-            }
+        Button playButton = findViewById(R.id.playButton);
+        playButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainMenuActivity.this, SnakeActivity.class);
+            startActivity(intent);
         });
 
-        Button levelButton = (Button) findViewById(R.id.levelButton);
-        levelButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                Intent intent = new Intent(MainMenuActivity.this, LevelSelectionActivity.class);
-                startActivity(intent);
-            }
+        Button levelButton = findViewById(R.id.levelButton);
+        levelButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainMenuActivity.this, LevelSelectionActivity.class);
+            startActivity(intent);
         });
 
-        Button highscoreButton = (Button) findViewById(R.id.highscoreButton);
-        highscoreButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                Intent intent = new Intent(MainMenuActivity.this, HighscoreActivity.class);
-                startActivity(intent);
-            }
-        });
-
-        Button exitButton = (Button) findViewById(R.id.exitButton);
-        exitButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                System.exit(0);
-            }
+        Button highscoreButton = findViewById(R.id.highscoreButton);
+        highscoreButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainMenuActivity.this, HighscoreActivity.class);
+            startActivity(intent);
         });
     }
 }

@@ -21,32 +21,27 @@ public class LevelSelectionActivity extends Activity {
     }
 
     public void setListeners(){
-        Button levelOneButton = (Button) findViewById(R.id.levelOneButton);
-        levelOneButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFERENCES, MODE_PRIVATE);
-                SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putInt(LEVEL, 1);
-                editor.apply();
-            }
+        Button levelOneButton = findViewById(R.id.levelOneButton);
+        levelOneButton.setOnClickListener(v -> {
+            SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFERENCES, MODE_PRIVATE);
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putInt(LEVEL, 1);
+            editor.apply();
         });
 
-        Button levelTwoButton = (Button) findViewById(R.id.levelTwoButton);
-        levelTwoButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFERENCES, MODE_PRIVATE);
-                SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putInt(LEVEL, 2);
-                editor.apply();
-            }
+        Button levelTwoButton = findViewById(R.id.levelTwoButton);
+        levelTwoButton.setOnClickListener(v -> {
+            SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFERENCES, MODE_PRIVATE);
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putInt(LEVEL, 2);
+            editor.apply();
         });
 
-        Button levelBackButton = (Button) findViewById(R.id.levelBackButton);
-        levelBackButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                Intent intent = new Intent(LevelSelectionActivity.this, MainMenuActivity.class);
-                startActivity(intent);
-            }
+        Button levelBackButton = findViewById(R.id.levelBackButton);
+        levelBackButton.setOnClickListener(v -> {
+            Intent intent = new Intent(LevelSelectionActivity.this, MainMenuActivity.class);
+            startActivity(intent);
+            finish();
         });
     }
 }

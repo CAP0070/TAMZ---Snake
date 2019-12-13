@@ -17,7 +17,7 @@ public class HighscoreActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_highscore);
         setListeners();
-        TextView text = (TextView) findViewById(R.id.highscoreText2);
+        TextView text = findViewById(R.id.highscoreText2);
         text.setText(String.valueOf(loadHighscoreFromPreferences()));
     }
 
@@ -27,12 +27,11 @@ public class HighscoreActivity extends Activity {
     }
 
     public void setListeners(){
-        Button highscoreBackButton = (Button) findViewById(R.id.highscoreBackButton);
-        highscoreBackButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                Intent intent = new Intent(HighscoreActivity.this, MainMenuActivity.class);
-                startActivity(intent);
-            }
+        Button highscoreBackButton = findViewById(R.id.highscoreBackButton);
+        highscoreBackButton.setOnClickListener(v -> {
+            Intent intent = new Intent(HighscoreActivity.this, MainMenuActivity.class);
+            startActivity(intent);
+            finish();
         });
     }
 }
